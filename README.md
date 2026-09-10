@@ -1,11 +1,5 @@
 # Pengujian API Billing & Kasir SIMPUS (Puskesmas)
 
-Repo ini isinya hasil pengerjaan tugas magang saya di Diskominfo (Bidang Aptika) buat nguji endpoint billing, kasir, dan kwitansi di SIMPUS.
-
-- **Nama**: Muhammad Rafli Aolia
-- **Tugas**: Pengujian kalkulasi tagihan pelayanan, integrasi tarif tindakan dan obat, proses pelunasan kasir (Tunai / QRIS), serta pembuatan invoice elektronik.
-- **Hasil**: Semua skenario pengujian aman / lulus (100% Passed).
-
 ---
 
 ### Link Hasil Pengujian di Postman
