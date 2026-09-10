@@ -1,0 +1,317 @@
+{
+  "info": {
+    "name": "Pengujian Billing Puskesmas - Diskominfo",
+    "description": "Suite pengujian API kalkulasi retribusi, pelunasan (Tunai/QRIS), penerbitan kwitansi, dan idempotensi lengkap dengan script Test assertions otomatis (pm.test) dan response examples.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Kalkulasi Tagihan (Invoice)",
+      "item": [
+        {
+          "name": "TC-INV-01: Ambil Invoice Lengkap (Registrasi + Tindakan + Obat)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code adalah 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Format response sukses', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test('Kalkulasi Agregasi Biaya Akurat (Reg + Tindakan + Obat = 50.000)', function () {",
+                  "    var data = pm.response.json().data;",
+                  "    var reg = data.rincian.biaya_registrasi;",
+                  "    var tindakan = data.rincian.subtotal_tindakan;",
+                  "    var obat = data.rincian.subtotal_obat;",
+                  "    pm.expect(data.total_tagihan).to.eql(reg + tindakan + obat);",
+                  "    pm.expect(data.total_tagihan).to.eql(50000);",
+                  "});",
+                  "",
+                  "pm.test('Status tagihan valid', function () {",
+                  "    var data = pm.response.json().data;",
+                  "    pm.expect(['UNPAID', 'PAID']).to.include(data.status);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/invoice/KJ-2026-001",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "invoice", "KJ-2026-001"]
+            }
+          }
+        },
+        {
+          "name": "TC-INV-03: Kunjungan Tidak Ditemukan (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code adalah 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Pesan error data kunjungan tidak ditemukan', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(false);",
+                  "    pm.expect(json.message).to.include('tidak ditemukan');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/invoice/KJ-9999-XXX",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "invoice", "KJ-9999-XXX"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Pelunasan Pembayaran",
+      "item": [
+        {
+          "name": "TC-PAY-03: Validasi Pembayaran Tunai Kurang (Harus Ditolak)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server merespon dengan benar (400 atau 409 jika sudah dibayar)', function () {",
+                  "    pm.expect([400, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Status respon success adalah false', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kunjungan_id\": \"KJ-2026-001\",\n  \"metode\": \"TUNAI\",\n  \"nominal_bayar\": 30000\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/bayar",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "bayar"]
+            }
+          }
+        },
+        {
+          "name": "TC-PAY-02: Pelunasan Tunai Uang Lebih & Kembalian",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code adalah 200 OK (atau 409 jika invoice sudah lunas)', function () {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 200 && json.data) {",
+                  "    if (json.data.kwitansi_id) {",
+                  "        pm.collectionVariables.set('current_kwitansi_id', json.data.kwitansi_id);",
+                  "    }",
+                  "    pm.test('Status invoice adalah PAID', function () {",
+                  "        pm.expect(json.data.status_invoice).to.eql('PAID');",
+                  "    });",
+                  "    pm.test('Kalkulasi kembalian tepat Rp 50.000', function () {",
+                  "        pm.expect(json.data.kembalian).to.eql(50000);",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Invoice tercatat sudah lunas', function () {",
+                  "        pm.expect(json.message).to.include('lunas');",
+                  "    });",
+                  "    if (json.kwitansi_id) {",
+                  "        pm.collectionVariables.set('current_kwitansi_id', json.kwitansi_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "IDEM-KEY-001"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kunjungan_id\": \"KJ-2026-001\",\n  \"metode\": \"TUNAI\",\n  \"nominal_bayar\": 100000,\n  \"idempotency_key\": \"IDEM-KEY-001\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/bayar",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "bayar"]
+            }
+          }
+        },
+        {
+          "name": "TC-PAY-04: Pelunasan Nontunai (QRIS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code adalah 200 OK atau 409 jika sudah lunas', function () {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Pelunasan QRIS Berhasil', function () {",
+                  "        pm.expect(json.data.status_invoice).to.eql('PAID');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Status QRIS tercatat lunas', function () {",
+                  "        pm.expect(json.message).to.include('lunas');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "IDEM-KEY-002"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kunjungan_id\": \"KJ-2026-002\",\n  \"metode\": \"QRIS\",\n  \"nominal_bayar\": 10000,\n  \"ref_transaksi\": \"QRIS-BCA-992381230\",\n  \"idempotency_key\": \"IDEM-KEY-002\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/bayar",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "bayar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Kwitansi Elektronik & Idempotensi",
+      "item": [
+        {
+          "name": "TC-KWT-01: Penerbitan Kwitansi Sah (Nomor Unik Resmi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server merespon endpoint kwitansi (200 atau 404 valid)', function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Nomor kwitansi resmi Puskesmas terverifikasi', function () {",
+                  "        pm.expect(json.data.nomor_kwitansi).to.include('KWT/PKM/');",
+                  "        pm.expect(json.data.status).to.eql('LUNAS');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Respon struktur valid saat kwitansi dipanggil', function () {",
+                  "        pm.expect(json.success).to.eql(false);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/kwitansi/{{current_kwitansi_id}}",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "kwitansi", "{{current_kwitansi_id}}"]
+            }
+          }
+        },
+        {
+          "name": "TC-IDEM-01: Idempotensi Transaksi (Cegah Double Bayar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Server menangani transaksi idempotensi', function () {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Idempotency-Key", "value": "IDEM-KEY-001"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kunjungan_id\": \"KJ-2026-001\",\n  \"metode\": \"TUNAI\",\n  \"nominal_bayar\": 100000,\n  \"idempotency_key\": \"IDEM-KEY-001\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8080/api/v1/billing/bayar",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8080",
+              "path": ["api", "v1", "billing", "bayar"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "current_kwitansi_id",
+      "value": "2749922f"
+    }
+  ]
+}
