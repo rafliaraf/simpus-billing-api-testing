@@ -1,11 +1,3 @@
-# Laporan Pengujian Billing & Retribusi Pelayanan Puskesmas
-
-**Nama Penyusun**: Muhammad Rafli Aolia  
-**Unit Magang**: Dinas Komunikasi dan Informatika (Diskominfo)  
-**Topik Tugas**: Pengujian API Retribusi Layanan, Kasir (Tunai / QRIS), Kwitansi, dan Idempotensi  
-
----
-
 ## A. Tujuan & Ringkasan Pengujian
 Tujuan dari pengujian ini adalah memastikan sistem kasir dan tagihan Puskesmas berjalan dengan benar, tidak ada salah hitung tarif retribusi, status pelunasan ter-update dengan aman, serta kwitansi resmi terbit secara unik tanpa risiko dobel transaksi.
 
