@@ -48,8 +48,3 @@ Hasil run pengujian otomatisnya bisa langsung dicek di sini:
 | 9 | Uji double click / request kembar | Transaksi ga kedobelan | **PASS** |
 
 ---
-
-### Isi File di Repo
-- `Postman_Collection_Billing_Puskesmas.json` : Export collection Postman (udah ada request, response sukses, dan script test-nya).
-- `server.py` : Mock server sederhana buat ngetes endpoint-nya.
-- `test_runner.py` : Script Python buat jalanin semua test case secara otomatis.
