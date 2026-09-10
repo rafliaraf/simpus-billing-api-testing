@@ -9,7 +9,7 @@
 
 ## 1. Tautan & Berkas Pengumpulan
 - **Tautan Hasil Uji (Postman Runner)**:  
-  `https://muhammadrafli0876-301798.postman.co/workspace/Muhammad-Rafli-aolia's-Workspac~5857143a-80c0-455e-8d05-c21f3943e962/run/58110220-3bab09d2-0c7e-42f6-abb4-101c5a6d97d4?action=share&creator=58110220`
+  `https://muhammadrafli0876-301798.postman.co/workspace/Muhammad-Rafli-aolia's-Workspac~5857143a-80c0-455e-8d05-c21f3943e962/run/58110220-58b3f2e7-f2c4-40b2-8f0e-36932af9413e?action=share&creator=58110220`
 - **File Arsip (ZIP)**: `Pengujian_Billing_Puskesmas_Muhammad_Rafli_Aolia.zip` (Berisi Collection Postman, script otomatis, mock server API, dan dokumen teknis).
 
 ---
